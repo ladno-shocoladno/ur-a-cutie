@@ -2,8 +2,6 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "react-feather";
 import Piano from "../components/Piano";
-import SpecialLinks from "../components/links/SpecialLinks";
-import Footer from "../components/Footer";
 import { compliments } from "../data/compliments";
 
 export default function Home() {
@@ -15,7 +13,6 @@ export default function Home() {
     if (savedTheme) {
       setDark(savedTheme === "dark");
     }
-    // Выбираем случайный комплимент при загрузке
     setCompliment(compliments[Math.floor(Math.random() * compliments.length)]);
   }, []);
 
@@ -23,7 +20,6 @@ export default function Home() {
     setCompliment(compliments[Math.floor(Math.random() * compliments.length)]);
   };
 
-  // Пока комплимент не загрузился, показываем простую заглушку
   if (compliment.length === 0) {
     return (
       <div className={`container ${dark ? "dark" : ""}`}>
@@ -35,11 +31,11 @@ export default function Home() {
   return (
     <div className={`container ${dark ? "dark" : ""}`}>
       <Head>
-        <title>Для моей любимой 🎹🧶</title>
+        <title>Для моей любимой 🧶</title>
         <link rel="icon" href="/ur-a-cutie/favicon.ico" />
       </Head>
 
-      <main>
+      <main className="main">
         <h1 className="title">Привет, любовь! 🥧</h1>
         <p className="description">Надеюсь, твой день такой же прекрасный, как ты.</p>
         
@@ -63,7 +59,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Кнопка-клубок для нового комплимента */}
         <div 
           className="yarn-button" 
           onClick={getRandomCompliment}
@@ -73,10 +68,7 @@ export default function Home() {
         </div>
 
         <Piano dark={dark} />
-        <SpecialLinks dark={dark} />
       </main>
-      
-      <Footer dark={dark} />
 
       <style jsx>{`
         .dark {
@@ -85,12 +77,25 @@ export default function Home() {
         }
         .container {
           min-height: 100vh;
-          padding: 0 1rem;
+          padding: 0;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
           transition: background 0.3s, color 0.3s;
+          border: none;
+          margin: 0;
+          width: 100%;
+        }
+        .main {
+          padding: 2rem 1rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          max-width: 800px;
         }
         .toggle-container {
           margin: 1.5rem 0;
@@ -108,6 +113,7 @@ export default function Home() {
           text-align: center;
           max-width: 600px;
           box-shadow: 0 4px 15px rgba(237, 100, 166, 0.2);
+          margin: 2rem 0;
         }
         .yarn-button:hover {
           transform: translateY(-3px) scale(1.02);
@@ -127,15 +133,6 @@ export default function Home() {
           text-align: center;
           opacity: 0.8;
           margin-top: 0.5rem;
-        }
-        main {
-          padding: 2rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          width: 100%;
         }
       `}</style>
     </div>
