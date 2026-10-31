@@ -27,7 +27,6 @@ export default function Piano({ dark }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Функция воспроизведения звука
   const playNote = (freq) => {
     const audio = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audio.createOscillator();
@@ -37,7 +36,7 @@ export default function Piano({ dark }) {
     gainNode.connect(audio.destination);
 
     oscillator.frequency.value = freq;
-    oscillator.type = "triangle"; // Более мягкий звук, похожий на пианино
+    oscillator.type = "triangle";
     gainNode.gain.setValueAtTime(0.3, audio.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + 1.5);
 
@@ -51,9 +50,8 @@ export default function Piano({ dark }) {
     setTimeout(() => setActiveKey((prev) => (prev === keyData.note ? null : prev)), 200);
   };
 
-  // Поддержка физической клавиатуры на ПК
   useEffect(() => {
-    if (isMobile) return; // На телефоне клавиатура не нужна
+    if (isMobile) return;
 
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
@@ -68,30 +66,34 @@ export default function Piano({ dark }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isMobile]);
 
-  const displayNotes = isMobile ? notes.filter((n) => n.color === "white") : notes;
+  // На мобильных показываем только 7 белых клавиш (без чёрных)
+  const displayNotes = isMobile ? notes.filter((n) => n.color === "white").slice(0, 7) : notes;
 
   return (
     <div className="piano-container">
       <h3 className="piano-title">🎹 Сыграй мне мелодию</h3>
       <p className="piano-hint">
-        {isMobile ? "Нажми на клавиши пальцем" : "Нажимай клавиши на клавиатуре (A, S, D...) или кликай мышкой"}
+        {isMobile ? "Свайпай влево-вправо и нажимай на клавиши" : "Нажимай клавиши на клавиатуре (A, S, D...) или кликай мышкой"}
       </p>
       
-      <div className={`piano ${isMobile ? "mobile" : ""}`}>
-        {displayNotes.map((keyData) => (
-          <button
-            key={keyData.note}
-            className={`key ${keyData.color} ${activeKey === keyData.note ? "active" : ""}`}
-            onMouseDown={() => triggerNote(keyData)}
-            onTouchStart={(e) => {
-              e.preventDefault(); // Предотвращаем зум и скролл при тапе
-              triggerNote(keyData);
-            }}
-          >
-            <span className="key-label">{keyData.note}</span>
-            {!isMobile && <span className="key-hint">{keyData.key.toUpperCase()}</span>}
-          </button>
-        ))}
+      <div className={`piano-wrapper ${isMobile ? "mobile" : ""}`}>
+        <div className={`piano ${isMobile ? "mobile" : ""}`}>
+          {displayNotes.map((keyData) => (
+            <button
+              key={keyData.note}
+              className={`key ${keyData.color} ${activeKey === keyData.note ? "active" : ""}`}
+              onMouseDown={() => triggerNote(keyData)}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                triggerNote(keyData);
+              }}
+            >
+              <span className="key-label">{keyData.note}</span>
+              {!isMobile && <span className="key-hint">{keyData.key.toUpperCase()}</span>}
+            </button>
+          ))}
+        </div>
+        {isMobile && <div className="scroll-hint">← Свайпай →</div>}
       </div>
 
       <style jsx>{`
@@ -118,6 +120,35 @@ export default function Piano({ dark }) {
           color: ${dark ? "#aaa" : "#666"};
         }
 
+        .piano-wrapper {
+          position: relative;
+          width: 100%;
+        }
+
+        .piano-wrapper.mobile {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          padding-bottom: 5px;
+        }
+
+        .piano-wrapper.mobile::-webkit-scrollbar {
+          display: none;
+        }
+
+        .scroll-hint {
+          margin-top: 10px;
+          font-size: 0.8rem;
+          color: ${dark ? "#888" : "#999"};
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+
         .piano {
           display: flex;
           justify-content: center;
@@ -128,21 +159,9 @@ export default function Piano({ dark }) {
         }
 
         .piano.mobile {
-          height: 160px;
-          overflow-x: auto;
-          padding-bottom: 10px;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
-          scrollbar-color: ${dark ? "#666" : "#ccc"} transparent;
-        }
-
-        .piano.mobile::-webkit-scrollbar {
-          height: 6px;
-        }
-
-        .piano.mobile::-webkit-scrollbar-thumb {
-          background-color: ${dark ? "#666" : "#ccc"};
-          border-radius: 3px;
+          height: 180px;
+          justify-content: flex-start;
+          padding: 0 10px;
         }
 
         .key {
@@ -161,8 +180,8 @@ export default function Piano({ dark }) {
         }
 
         .key.white {
-          width: ${isMobile ? "45px" : "55px"};
-          height: ${isMobile ? "160px" : "200px"};
+          width: ${isMobile ? "50px" : "55px"};
+          height: ${isMobile ? "180px" : "200px"};
           background: linear-gradient(to bottom, #fff 0%, #eee 100%);
           color: #333;
           z-index: 1;
@@ -187,7 +206,7 @@ export default function Piano({ dark }) {
         }
 
         .key-label {
-          font-size: ${isMobile ? "0.8rem" : "0.95rem"};
+          font-size: ${isMobile ? "0.85rem" : "0.95rem"};
           font-weight: bold;
         }
 
@@ -204,6 +223,10 @@ export default function Piano({ dark }) {
           }
           .piano-title {
             font-size: 1.2rem;
+          }
+          .key.white {
+            width: 45px;
+            height: 160px;
           }
         }
       `}</style>
