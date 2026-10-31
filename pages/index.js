@@ -2,36 +2,51 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "react-feather";
 import Weather from "../components/weather/Weather";
-import axios from "axios";
 import Preloader from "../components/Preloader";
 import LinkGrid from "../components/links/LinkGrid";
 import Footer from "../components/Footer";
+import { compliments } from "../data/compliments";
 
 export default function Home() {
   const [dark, setDark] = useState(true);
   const [days, setDays] = useState([undefined, undefined, undefined, undefined, undefined]);
-  const [compliment, setCompliment] = useState("")
-
+  const [compliment, setCompliment] = useState("");
 
   useEffect(() => {
-    setDark(window.localStorage.getItem("theme") === "dark");
-    axios.get("/api/compliment").then((res) => {
-      setCompliment(res.data.compliment)
-    })
-    axios.get(`/api/weather`).then((res) => {
-      setDays(res.data.days);
-    });
+    const savedTheme = window.localStorage.getItem("theme");
+    if (savedTheme) {
+      setDark(savedTheme === "dark");
+    }
+
+    const randomCompliment = compliments[Math.floor(Math.random() * compliments.length)];
+    setCompliment(randomCompliment);
+
+    fetch("https://wttr.in/?format=j1")
+      .then((res) => res.json())
+      .then((data) => {
+        const forecast = data.weather || [];
+        const weatherDays = forecast.slice(0, 5).map((day) => ({
+          date: day.date,
+          maxTemp: day.maxtempC,
+          minTemp: day.mintempC,
+          // можно добавить иконку погоды
+        }));
+        setDays(weatherDays);
+      })
+      .catch(() => {
+        setDays([]);
+      });
   }, []);
 
   if (compliment.length === 0) {
-    return <Preloader dark={dark} />
+    return <Preloader dark={dark} />;
   }
 
   return (
     <div className={`container ${dark ? "dark" : ""}`}>
       <Head>
         <title>Hey Madin</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/ur-a-cutie/favicon.ico" />
       </Head>
 
       <main>
@@ -39,29 +54,36 @@ export default function Home() {
 
         <p className="description">Hope you're having a great day!</p>
         <div className="toggle-container">
-          {dark ?
+          {dark ? (
             <Sun
               onClick={() => {
                 window.localStorage.setItem("theme", "light");
                 setDark(false);
               }}
             />
-            : <Moon
+          ) : (
+            <Moon
               onClick={() => {
                 window.localStorage.setItem("theme", "dark");
                 setDark(true);
               }}
             />
-          }
+          )}
         </div>
-        <code className={`${dark ? "dark-code" : ""} compliment`}>
+        <code
+          className={`${dark ? "dark-code" : ""} compliment`}
+          onClick={() => {
+            const newCompliment = compliments[Math.floor(Math.random() * compliments.length)];
+            setCompliment(newCompliment);
+          }}
+        >
           Always Remember: {compliment}
         </code>
 
-        <Weather days={days} dark={dark} />
-        <LinkGrid dark={dark}/>
+        {days.length > 0 && <Weather days={days} dark={dark} />}
+        <LinkGrid dark={dark} />
       </main>
-      <Footer dark={dark}/>
+      <Footer dark={dark} />
       <style jsx>{`
         .dark {
           background: #212121;
@@ -71,19 +93,19 @@ export default function Home() {
         .dark-code {
           color: black;
         }
-        
+
         code:hover,
         code:active,
         code:focus {
-          color: #F687B3;
-          border-color: #F687B3;
+          color: #f687b3;
+          border-color: #f687b3;
         }
 
         .dark-code:hover,
         .dark-code:active,
         .dark-code:focus {
-          background: #ED64A6;
-          border-color: #ED64A6;
+          background: #ed64a6;
+          border-color: #ed64a6;
           color: black;
         }
 
@@ -171,9 +193,7 @@ export default function Home() {
         * {
           box-sizing: border-box;
         }
-      `}
-      </style>
+      `}</style>
     </div>
   );
 }
-
