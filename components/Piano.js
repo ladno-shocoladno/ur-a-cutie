@@ -72,9 +72,6 @@ export default function Piano({ dark }) {
   return (
     <div className="piano-container">
       <h3 className="piano-title">🎹 Сыграй мне мелодию</h3>
-      <p className="piano-hint">
-        {isMobile ? "Свайпай влево-вправо и нажимай на клавиши" : "Нажимай клавиши на клавиатуре (A, S, D...) или кликай мышкой"}
-      </p>
       
       <div className={`piano-wrapper ${isMobile ? "mobile" : ""}`}>
         <div className={`piano ${isMobile ? "mobile" : ""}`}>
@@ -93,7 +90,7 @@ export default function Piano({ dark }) {
             </button>
           ))}
         </div>
-        {isMobile && <div className="scroll-hint">← Свайпай →</div>}
+        {isMobile && <div className="scroll-hint">←  →</div>}
       </div>
 
       <style jsx>{`
