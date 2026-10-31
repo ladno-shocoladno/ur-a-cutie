@@ -1,15 +1,13 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "react-feather";
-import Weather from "../components/weather/Weather";
-import Preloader from "../components/Preloader";
-import LinkGrid from "../components/links/LinkGrid";
+import Piano from "../components/Piano";
+import SpecialLinks from "../components/links/SpecialLinks";
 import Footer from "../components/Footer";
 import { compliments } from "../data/compliments";
 
 export default function Home() {
   const [dark, setDark] = useState(true);
-  const [days, setDays] = useState([undefined, undefined, undefined, undefined, undefined]);
   const [compliment, setCompliment] = useState("");
 
   useEffect(() => {
@@ -17,42 +15,34 @@ export default function Home() {
     if (savedTheme) {
       setDark(savedTheme === "dark");
     }
-
-    const randomCompliment = compliments[Math.floor(Math.random() * compliments.length)];
-    setCompliment(randomCompliment);
-
-    fetch("https://wttr.in/?format=j1")
-      .then((res) => res.json())
-      .then((data) => {
-        const forecast = data.weather || [];
-        const weatherDays = forecast.slice(0, 5).map((day) => ({
-          date: day.date,
-          maxTemp: day.maxtempC,
-          minTemp: day.mintempC,
-          // можно добавить иконку погоды
-        }));
-        setDays(weatherDays);
-      })
-      .catch(() => {
-        setDays([]);
-      });
+    // Выбираем случайный комплимент при загрузке
+    setCompliment(compliments[Math.floor(Math.random() * compliments.length)]);
   }, []);
 
+  const getRandomCompliment = () => {
+    setCompliment(compliments[Math.floor(Math.random() * compliments.length)]);
+  };
+
+  // Пока комплимент не загрузился, показываем простую заглушку
   if (compliment.length === 0) {
-    return <Preloader dark={dark} />;
+    return (
+      <div className={`container ${dark ? "dark" : ""}`}>
+        <p>Загружаю уют...</p>
+      </div>
+    );
   }
 
   return (
     <div className={`container ${dark ? "dark" : ""}`}>
       <Head>
-        <title>Hey Madin</title>
+        <title>Для моей любимой 🎹🧶</title>
         <link rel="icon" href="/ur-a-cutie/favicon.ico" />
       </Head>
 
       <main>
-        <h1 className="title">Hi, Madin 🥧!</h1>
-
-        <p className="description">Hope you're having a great day!</p>
+        <h1 className="title">Привет, любовь! 🥧</h1>
+        <p className="description">Надеюсь, твой день такой же прекрасный, как ты.</p>
+        
         <div className="toggle-container">
           {dark ? (
             <Sun
@@ -60,6 +50,7 @@ export default function Home() {
                 window.localStorage.setItem("theme", "light");
                 setDark(false);
               }}
+              style={{ cursor: "pointer" }}
             />
           ) : (
             <Moon
@@ -67,131 +58,84 @@ export default function Home() {
                 window.localStorage.setItem("theme", "dark");
                 setDark(true);
               }}
+              style={{ cursor: "pointer" }}
             />
           )}
         </div>
-        <code
-          className={`${dark ? "dark-code" : ""} compliment`}
-          onClick={() => {
-            const newCompliment = compliments[Math.floor(Math.random() * compliments.length)];
-            setCompliment(newCompliment);
-          }}
-        >
-          Always Remember: {compliment}
-        </code>
 
-        {days.length > 0 && <Weather days={days} dark={dark} />}
-        <LinkGrid dark={dark} />
+        {/* Кнопка-клубок для нового комплимента */}
+        <div 
+          className="yarn-button" 
+          onClick={getRandomCompliment}
+          title="Нажми, чтобы получить новый комплимент"
+        >
+          🧶 {compliment}
+        </div>
+
+        <Piano dark={dark} />
+        <SpecialLinks dark={dark} />
       </main>
+      
       <Footer dark={dark} />
+
       <style jsx>{`
         .dark {
-          background: #212121;
-          color: white;
+          background: #1a1a1a;
+          color: #f0f0f0;
         }
-
-        .dark-code {
-          color: black;
-        }
-
-        code:hover,
-        code:active,
-        code:focus {
-          color: #f687b3;
-          border-color: #f687b3;
-        }
-
-        .dark-code:hover,
-        .dark-code:active,
-        .dark-code:focus {
-          background: #ed64a6;
-          border-color: #ed64a6;
-          color: black;
-        }
-
         .container {
           min-height: 100vh;
-          padding: 0 0.5rem;
+          padding: 0 1rem;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
+          transition: background 0.3s, color 0.3s;
         }
-
-        .compliment {
-          cursor: pointer;
-        }
-
         .toggle-container {
-          padding-bottom: 25px;
+          margin: 1.5rem 0;
         }
-
+        .yarn-button {
+          background: ${dark ? "#2d2d2d" : "#fff0f5"};
+          border: 2px solid ${dark ? "#ED64A6" : "#F687B3"};
+          color: ${dark ? "#f0f0f0" : "#333"};
+          padding: 1rem 1.5rem;
+          border-radius: 50px;
+          font-size: 1.2rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-align: center;
+          max-width: 600px;
+          box-shadow: 0 4px 15px rgba(237, 100, 166, 0.2);
+        }
+        .yarn-button:hover {
+          transform: translateY(-3px) scale(1.02);
+          box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4);
+          background: ${dark ? "#ED64A6" : "#F687B3"};
+          color: white;
+        }
+        .title {
+          margin: 0;
+          line-height: 1.15;
+          font-size: 3rem;
+          text-align: center;
+        }
+        .description {
+          line-height: 1.5;
+          font-size: 1.2rem;
+          text-align: center;
+          opacity: 0.8;
+          margin-top: 0.5rem;
+        }
         main {
-          padding: 2.5rem 0;
+          padding: 2rem 0;
           flex: 1;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
-        }
-
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
-
-        .title a {
-          color: #0070f3;
-          text-decoration: none;
-        }
-
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
-        }
-
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 4rem;
-        }
-
-        .title,
-        .description {
-          text-align: center;
-        }
-
-        .description {
-          line-height: 1.5;
-          font-size: 1.5rem;
-        }
-
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .logo {
-          height: 1em;
-        }
-      `}</style>
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-
-        * {
-          box-sizing: border-box;
+          width: 100%;
         }
       `}</style>
     </div>
