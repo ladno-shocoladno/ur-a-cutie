@@ -31,12 +31,12 @@ export default function Home() {
   return (
     <div className={`container ${dark ? "dark" : ""}`}>
       <Head>
-        <title>Для моей любимой 🧶</title>
+        <title>Бусичка 🧶</title>
         <link rel="icon" href="/ur-a-cutie/favicon.ico" />
       </Head>
 
       <main className="main">
-        <h1 className="title">Привет, любовь! 🥧</h1>
+        <h1 className="title">Привет, Мадиш! 🥧</h1>
         <p className="description">Надеюсь, твой день такой же прекрасный, как ты.</p>
         
         <div className="toggle-container">
