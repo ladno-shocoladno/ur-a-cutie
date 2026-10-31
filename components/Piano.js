@@ -1,130 +1,210 @@
 import { useState, useEffect } from "react";
 
-const keys = [
-  { note: "До", freq: 261.63, type: "white", key: "1" },
-  { note: "Ре", freq: 293.66, type: "white", key: "2" },
-  { note: "Ми", freq: 329.63, type: "white", key: "3" },
-  { note: "Фа", freq: 349.23, type: "white", key: "4" },
-  { note: "Соль", freq: 392.00, type: "white", key: "5" },
-  { note: "Ля", freq: 440.00, type: "white", key: "6" },
-  { note: "Си", freq: 493.88, type: "white", key: "7" },
+const notes = [
+  { key: "a", note: "До", freq: 261.63, color: "white" },
+  { key: "w", note: "До#", freq: 277.18, color: "black" },
+  { key: "s", note: "Ре", freq: 293.66, color: "white" },
+  { key: "e", note: "Ре#", freq: 311.13, color: "black" },
+  { key: "d", note: "Ми", freq: 329.63, color: "white" },
+  { key: "f", note: "Фа", freq: 349.23, color: "white" },
+  { key: "t", note: "Фа#", freq: 369.99, color: "black" },
+  { key: "g", note: "Соль", freq: 392.00, color: "white" },
+  { key: "y", note: "Соль#", freq: 415.30, color: "black" },
+  { key: "h", note: "Ля", freq: 440.00, color: "white" },
+  { key: "u", note: "Ля#", freq: 466.16, color: "black" },
+  { key: "j", note: "Си", freq: 493.88, color: "white" },
+  { key: "k", note: "До2", freq: 523.25, color: "white" },
 ];
 
 export default function Piano({ dark }) {
-  const [audioCtx, setAudioCtx] = useState(null);
   const [activeKey, setActiveKey] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    setAudioCtx(ctx);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const playNote = (freq, keyIndex) => {
-    if (!audioCtx) return;
-    if (audioCtx.state === "suspended") audioCtx.resume();
-
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    
-    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+  // Функция воспроизведения звука
+  const playNote = (freq) => {
+    const audio = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audio.createOscillator();
+    const gainNode = audio.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    gainNode.connect(audio.destination);
 
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 1.5);
+    oscillator.frequency.value = freq;
+    oscillator.type = "triangle"; // Более мягкий звук, похожий на пианино
+    gainNode.gain.setValueAtTime(0.3, audio.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + 1.5);
 
-    // Визуальная обратная связь
-    setActiveKey(keyIndex);
-    setTimeout(() => setActiveKey(null), 200);
+    oscillator.start(audio.currentTime);
+    oscillator.stop(audio.currentTime + 1.5);
   };
 
+  const triggerNote = (keyData) => {
+    setActiveKey(keyData.note);
+    playNote(keyData.freq);
+    setTimeout(() => setActiveKey((prev) => (prev === keyData.note ? null : prev)), 200);
+  };
+
+  // Поддержка физической клавиатуры на ПК
   useEffect(() => {
+    if (isMobile) return; // На телефоне клавиатура не нужна
+
     const handleKeyDown = (e) => {
-      const keyIndex = keys.findIndex(k => k.key === e.key);
-      if (keyIndex !== -1) {
-        playNote(keys[keyIndex].freq, keyIndex);
+      const key = e.key.toLowerCase();
+      const noteData = notes.find((n) => n.key === key);
+      if (noteData && !e.repeat) {
+        e.preventDefault();
+        triggerNote(noteData);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [audioCtx]);
+  }, [isMobile]);
+
+  const displayNotes = isMobile ? notes.filter((n) => n.color === "white") : notes;
 
   return (
     <div className="piano-container">
-      <p className="piano-text">
-        Нажми на клавиши или используй цифры <strong>1-7</strong> 🎹
+      <h3 className="piano-title">🎹 Сыграй мне мелодию</h3>
+      <p className="piano-hint">
+        {isMobile ? "Нажми на клавиши пальцем" : "Нажимай клавиши на клавиатуре (A, S, D...) или кликай мышкой"}
       </p>
-      <div className="piano">
-        {keys.map((key, index) => (
+      
+      <div className={`piano ${isMobile ? "mobile" : ""}`}>
+        {displayNotes.map((keyData) => (
           <button
-            key={index}
-            className={`key ${key.type} ${activeKey === index ? "active" : ""} ${dark ? "dark-key" : ""}`}
-            onClick={() => playNote(key.freq, index)}
+            key={keyData.note}
+            className={`key ${keyData.color} ${activeKey === keyData.note ? "active" : ""}`}
+            onMouseDown={() => triggerNote(keyData)}
+            onTouchStart={(e) => {
+              e.preventDefault(); // Предотвращаем зум и скролл при тапе
+              triggerNote(keyData);
+            }}
           >
-            <span className="note-name">{key.note}</span>
-            <span className="key-hint">{key.key}</span>
+            <span className="key-label">{keyData.note}</span>
+            {!isMobile && <span className="key-hint">{keyData.key.toUpperCase()}</span>}
           </button>
         ))}
       </div>
+
       <style jsx>{`
         .piano-container {
-          margin-top: 2rem;
           text-align: center;
+          margin: 2rem 0;
+          padding: 1.5rem;
+          border-radius: 15px;
+          background: ${dark ? "#2d2d44" : "#f8f9fa"};
+          width: 100%;
+          max-width: 90vw;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        .piano-text {
-          font-size: 1rem;
-          margin-bottom: 1rem;
-          opacity: 0.8;
+
+        .piano-title {
+          margin: 0 0 0.5rem 0;
+          font-size: 1.4rem;
+          color: ${dark ? "#fff" : "#333"};
         }
+
+        .piano-hint {
+          margin: 0 0 1.5rem 0;
+          font-size: 0.9rem;
+          color: ${dark ? "#aaa" : "#666"};
+        }
+
         .piano {
           display: flex;
           justify-content: center;
-          background: #333;
-          padding: 10px 10px 0 10px;
-          border-radius: 8px;
-          box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-        .key {
-          width: 50px;
-          height: 140px;
-          background: white;
-          border: 1px solid #ccc;
-          border-radius: 0 0 5px 5px;
-          margin: 0 2px;
-          cursor: pointer;
           position: relative;
-          transition: background 0.1s, transform 0.1s;
+          height: 200px;
+          min-width: min-content;
+          user-select: none;
+        }
+
+        .piano.mobile {
+          height: 160px;
+          overflow-x: auto;
+          padding-bottom: 10px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+          scrollbar-color: ${dark ? "#666" : "#ccc"} transparent;
+        }
+
+        .piano.mobile::-webkit-scrollbar {
+          height: 6px;
+        }
+
+        .piano.mobile::-webkit-scrollbar-thumb {
+          background-color: ${dark ? "#666" : "#ccc"};
+          border-radius: 3px;
+        }
+
+        .key {
+          position: relative;
+          border: 1px solid #333;
+          border-radius: 0 0 6px 6px;
+          cursor: pointer;
           display: flex;
           flex-direction: column;
           justify-content: flex-end;
           align-items: center;
-          padding-bottom: 8px;
+          padding-bottom: 10px;
+          transition: all 0.1s ease;
+          flex-shrink: 0;
+          outline: none;
         }
-        .key:active, .key.active {
-          background: #f0f0f0;
-          transform: translateY(2px);
-          box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+
+        .key.white {
+          width: ${isMobile ? "45px" : "55px"};
+          height: ${isMobile ? "160px" : "200px"};
+          background: linear-gradient(to bottom, #fff 0%, #eee 100%);
+          color: #333;
+          z-index: 1;
         }
-        .dark-key:active, .dark-key.active {
-          background: #555;
+
+        .key.black {
+          width: 36px;
+          height: 120px;
+          background: linear-gradient(to bottom, #333 0%, #000 100%);
+          color: #fff;
+          margin-left: -18px;
+          margin-right: -18px;
+          z-index: 2;
+          border-color: #000;
         }
-        .note-name {
-          font-size: 11px;
-          color: #888;
-          pointer-events: none;
-          margin-bottom: 2px;
+
+        .key.active {
+          transform: translateY(3px);
+          background: ${dark ? "linear-gradient(to bottom, #ED64A6 0%, #D53F8C 100%)" : "linear-gradient(to bottom, #F687B3 0%, #ED64A6 100%)"};
+          color: #fff;
+          border-color: #D53F8C;
         }
-        .key-hint {
-          font-size: 10px;
-          color: #aaa;
+
+        .key-label {
+          font-size: ${isMobile ? "0.8rem" : "0.95rem"};
           font-weight: bold;
-          pointer-events: none;
+        }
+
+        .key-hint {
+          font-size: 0.75rem;
+          opacity: 0.6;
+          margin-top: 6px;
+          font-family: monospace;
+        }
+
+        @media (max-width: 480px) {
+          .piano-container {
+            padding: 1rem;
+          }
+          .piano-title {
+            font-size: 1.2rem;
+          }
         }
       `}</style>
     </div>
